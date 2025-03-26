@@ -1,43 +1,41 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
 require('dotenv').config();
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const express=require("express")
 const connectDB = require('./config/db');
-var app = express();
+const router = require('./routes/index');
+const createHttpError = require('http-errors');
+const cors = require('cors');
+
+
+const app = express();
+app.use(cors({ origin: 'http://localhost:3000' })); // Permite peticiones desde React
+
+// O permitir todas las solicitudes (solo en desarrollo)
+app.use(cors());
+app.use(express.json()); 
+
+// se utiliza para acceder a los datos de formulario
+app.use(express.urlencoded({ extended: true }));
 connectDB();
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/api', indexRouter);
 
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use('/api',router);
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-app.listen(8000, ()=> {
-  console.log(`Server running in https://localhost:8000`);
+app.use(function(req, res, next){
+    const err = createHttpError(404, 'Not Found');
+    next(err);
   });
-module.exports = app;
+
+app.use(function(err , req, res , next ) {
+  
+    return res.status(err.status || 500).json({
+      ok : false,
+      msg : err.message
+      });
+  });
+
+ app.listen(8000, ()=> {
+console.log(`Server running in https://localhost:8000`);
+});
+
+module.exports=app
